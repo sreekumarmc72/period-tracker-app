@@ -1,0 +1,58 @@
+Period Tracker Flutter App - Component Structure and Debugging Guide
+
+1. Widget Tree and Component Relationships:
+MyApp (main.dart)
+└── PeriodTrackerPage (screens/period_tracker_page.dart)
+    ├── Form Inputs
+    │   ├── Date Picker (Last Period Date)
+    │   └── Text Field (Cycle Length)
+    ├── ResultCard (widgets/result_card/)
+    │   └── ResultRows (multiple rows showing dates)
+    └── CalendarWidget (widgets/calendar/)
+        └── Two Month Calendar Display
+
+2. Data Flow:
+- PeriodTrackerPage maintains core state:
+  * lastPeriodDate (DateTime?)
+  * cycleLength (int?)
+  * result (String)
+
+- Calculate button flow:
+  1. _calculate() method processes the dates
+  2. Results string is generated and stored in 'result'
+  3. 'result' is passed to ResultCard as 'resultData'
+  4. lastPeriodDate and cycleLength are passed to CalendarWidget
+
+3. Utility Classes:
+- DateUtils (utils/date_utils.dart): Date formatting functions used by all components
+- CalendarUtils: Helps CalendarWidget with calculations
+- ResultTypes: Defines structure for result display
+
+4. Debug Points:
+To debug effectively, check:
+- Form Input Values: lastPeriodDate and cycleLength in PeriodTrackerPage
+- Result Generation: _calculate() method output
+- Result Display: How ResultCard parses and displays the resultData
+- Calendar Display: How CalendarWidget uses the input dates
+- Date Calculations: DateUtils and CalendarUtils functions
+
+5. State Updates:
+- All state changes happen through setState() in PeriodTrackerPage
+- Main triggers:
+  * Date picker selection
+  * Cycle length text field changes
+  * Calculate button press
+
+6. Key Files for Debugging:
+- lib/screens/period_tracker_page.dart - Main logic and state
+- lib/widgets/result_card/result_card.dart - Results display
+- lib/widgets/calendar/calendar_widget.dart - Calendar visualization
+- lib/utils/date_utils.dart - Date formatting utilities
+
+Debugging Tips:
+- Input problems? Check PeriodTrackerPage's form section
+- Wrong calculations? Check the _calculate() method
+- Display issues? Check ResultCard or CalendarWidget
+- Date formatting issues? Check DateUtils
+
+Note: All state is managed in PeriodTrackerPage, making it the central point for debugging any data-related issues. The other components are primarily responsible for UI rendering based on the data they receive.
