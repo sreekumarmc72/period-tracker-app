@@ -25,6 +25,16 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     _focusedDay = DateTime(widget.lastPeriodDate.year, widget.lastPeriodDate.month, 1); // Start with the month of lastPeriodDate
   }
 
+  @override
+  void didUpdateWidget(CalendarWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.lastPeriodDate != oldWidget.lastPeriodDate) {
+      setState(() {
+        _focusedDay = DateTime(widget.lastPeriodDate.year, widget.lastPeriodDate.month, 1);
+      });
+    }
+  }
+
   void _onPreviousMonth() {
     setState(() {
       _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
@@ -52,7 +62,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     rows.add(TableRow(
       children: CalendarUtils.weekDays
           .map((d) => Center(
-                child: Text(d, style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  d,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               ))
           .toList(),
     ));
@@ -70,20 +86,20 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         } else {
           final thisDate = DateTime(month.year, month.month, day);
           Color? bgColor;
-          Color? textColor = Colors.black;
-          bool isHighlighted = false;
+          Color textColor = Theme.of(context).colorScheme.onSurface;
 
           if (utils.DateUtils.isSameDay(thisDate, lastPeriodDate)) {
-            isHighlighted = true;
+            bgColor = Colors.green.withOpacity(0.3);
+            textColor = Colors.green;
           } else if (utils.DateUtils.isSameDay(thisDate, ovulation)) {
-            bgColor = Colors.blue[200];
-            textColor = Colors.blue[900];
+            bgColor = Colors.blue.withOpacity(0.3);
+            textColor = Colors.blue;
           } else if (unsafeDates.any((d) => utils.DateUtils.isSameDay(d, thisDate))) {
-            bgColor = Colors.red[200];
-            textColor = Colors.red[900];
+            bgColor = Colors.red.withOpacity(0.3);
+            textColor = Colors.red;
           } else if (safeDates.any((d) => utils.DateUtils.isSameDay(d, thisDate))) {
-            bgColor = Colors.green[200];
-            textColor = Colors.green[900];
+            bgColor = Colors.green.withOpacity(0.3);
+            textColor = Colors.green;
           }
 
           cells.add(
@@ -93,25 +109,22 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               },
               child: Container(
                 margin: const EdgeInsets.all(4),
-                decoration: isHighlighted
+                decoration: bgColor != null
                     ? BoxDecoration(
-                        color: Colors.green[200], // Green background for last period date
-                        borderRadius: BorderRadius.circular(8), // Rounded corners like safe dates
-                        border: Border.all(color: Colors.green[900]!, width: 1.5), // Green border
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: textColor,
+                          width: 1.5,
+                        ),
                       )
-                    : (bgColor != null
-                        ? BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: textColor!, width: 1.5),
-                          )
-                        : null),
+                    : null,
                 child: Center(
                   child: Text(
                     '$day',
                     style: TextStyle(
-                      fontWeight: FontWeight.normal,
-                      color: isHighlighted ? Colors.green[900] : textColor, // Dark green text for last period date
+                      fontWeight: utils.DateUtils.isSameDay(thisDate, lastPeriodDate) ? FontWeight.bold : FontWeight.normal,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -132,15 +145,25 @@ class _CalendarWidgetState extends State<CalendarWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back_ios),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               onPressed: _onPreviousMonth,
             ),
             Text(
               '${utils.DateUtils.monthName(month.month)} ${month.year}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             IconButton(
-              icon: const Icon(Icons.arrow_forward_ios),
+              icon: Icon(
+                Icons.arrow_forward_ios,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               onPressed: _onNextMonth,
             ),
           ],

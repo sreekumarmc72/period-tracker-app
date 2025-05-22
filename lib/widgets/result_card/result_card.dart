@@ -36,28 +36,40 @@ class ResultCard extends StatelessWidget {
           icon: ResultTypeData.typeData[ResultType.nextPeriod]!.icon,
           label: ResultTypeData.typeData[ResultType.nextPeriod]!.label,
           value: utils.DateUtils.formatDate(_extractResult('Next Expected Period')),
-          iconColor: ResultTypeData.typeData[ResultType.nextPeriod]!.color,
+          colorBuilder: ResultTypeData.typeData[ResultType.nextPeriod]!.colorBuilder,
         ),
-        const Divider(height: 28, thickness: 1), // Add divider
+        Divider(
+          height: 28,
+          thickness: 1,
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
         ResultRow(
           icon: ResultTypeData.typeData[ResultType.ovulation]!.icon,
           label: ResultTypeData.typeData[ResultType.ovulation]!.label,
           value: utils.DateUtils.formatDate(_extractResult('Expected Ovulation')),
-          iconColor: ResultTypeData.typeData[ResultType.ovulation]!.color,
+          colorBuilder: ResultTypeData.typeData[ResultType.ovulation]!.colorBuilder,
         ),
-        const Divider(height: 28, thickness: 1), // Add divider
+        Divider(
+          height: 28,
+          thickness: 1,
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
         ResultRow(
           icon: ResultTypeData.typeData[ResultType.safeDates]!.icon,
           label: ResultTypeData.typeData[ResultType.safeDates]!.label,
           value: utils.DateUtils.formatSafeDateRanges(_extractResult('Safe Date Range')),
-          iconColor: ResultTypeData.typeData[ResultType.safeDates]!.color,
+          colorBuilder: ResultTypeData.typeData[ResultType.safeDates]!.colorBuilder,
         ),
-        const Divider(height: 28, thickness: 1), // Add divider
+        Divider(
+          height: 28,
+          thickness: 1,
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
         ResultRow(
           icon: ResultTypeData.typeData[ResultType.unsafeDates]!.icon,
           label: ResultTypeData.typeData[ResultType.unsafeDates]!.label,
           value: utils.DateUtils.formatDateRange(_extractResult('Unsafe Date Range')),
-          iconColor: ResultTypeData.typeData[ResultType.unsafeDates]!.color,
+          colorBuilder: ResultTypeData.typeData[ResultType.unsafeDates]!.colorBuilder,
         ),
       ],
     );

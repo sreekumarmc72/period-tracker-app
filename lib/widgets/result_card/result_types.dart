@@ -10,34 +10,36 @@ enum ResultType {
 class ResultTypeData {
   final String label;
   final IconData icon;
-  final Color color;
+  final Color Function(BuildContext) colorBuilder;
 
   const ResultTypeData({
     required this.label,
     required this.icon,
-    required this.color,
+    required this.colorBuilder,
   });
+
+  Color getColor(BuildContext context) => colorBuilder(context);
 
   static final Map<ResultType, ResultTypeData> typeData = {
     ResultType.nextPeriod: ResultTypeData(
       label: 'Next Period',
       icon: Icons.calendar_month,
-      color: Colors.pinkAccent,
+      colorBuilder: (context) => Theme.of(context).colorScheme.primary,
     ),
     ResultType.ovulation: ResultTypeData(
       label: 'Ovulation',
       icon: Icons.water_drop,
-      color: Colors.blue,
+      colorBuilder: (context) => Theme.of(context).colorScheme.tertiary,
     ),
     ResultType.unsafeDates: ResultTypeData(
       label: 'Unsafe Dates',
       icon: Icons.warning,
-      color: Colors.red,
+      colorBuilder: (context) => Theme.of(context).colorScheme.error,
     ),
     ResultType.safeDates: ResultTypeData(
       label: 'Safe Dates',
       icon: Icons.check_circle,
-      color: Colors.green,
+      colorBuilder: (context) => Theme.of(context).colorScheme.secondary,
     ),
   };
 }

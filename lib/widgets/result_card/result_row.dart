@@ -4,14 +4,14 @@ class ResultRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final Color iconColor;
+  final Color Function(BuildContext) colorBuilder;
 
   const ResultRow({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
-    required this.iconColor,
+    required this.colorBuilder,
   });
 
   @override
@@ -24,10 +24,12 @@ class ResultRow extends StatelessWidget {
       cleanValue = cleanValue.replaceAll('(excluding ovulation day)', '').trim();
     }
     
+    final iconColor = colorBuilder(context);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // Align items to the start vertically
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             decoration: BoxDecoration(
@@ -44,19 +46,19 @@ class ResultRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF8B5F6C), // Muted purple
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const Spacer(), // Pushes the date column to the right
+                const Spacer(),
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Align text to the left
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: cleanValue.split('\n').map((line) => Text(
                     line,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: Colors.black, // Black color for value
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   )).toList(),
                 ),

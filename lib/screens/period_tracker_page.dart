@@ -1,7 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:period_tracker_flutter/widgets/calendar/calendar_widget.dart';
 import 'package:period_tracker_flutter/widgets/result_card/result_card.dart';
 import 'package:period_tracker_flutter/utils/date_utils.dart' as utils;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/history_item.dart';
+import 'history_page.dart';
+import 'log_page.dart';
+import 'settings_page.dart';
 
 class PeriodTrackerPage extends StatefulWidget {
   const PeriodTrackerPage({Key? key}) : super(key: key);
@@ -15,6 +21,43 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
   int? cycleLength;
   String result = '';
   final TextEditingController _cycleLengthController = TextEditingController();
+  bool _showSavedMessage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastPeriodMillis = prefs.getInt('lastPeriodDate');
+    final savedCycleLength = prefs.getInt('cycleLength');
+
+    setState(() {
+      if (lastPeriodMillis != null) {
+        lastPeriodDate = DateTime.fromMillisecondsSinceEpoch(lastPeriodMillis);
+      }
+      if (savedCycleLength != null) {
+        cycleLength = savedCycleLength;
+        _cycleLengthController.text = savedCycleLength.toString();
+      }
+    });
+
+    if (lastPeriodDate != null && cycleLength != null) {
+      _calculate();
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (lastPeriodDate != null) {
+      await prefs.setInt('lastPeriodDate', lastPeriodDate!.millisecondsSinceEpoch);
+    }
+    if (cycleLength != null) {
+      await prefs.setInt('cycleLength', cycleLength!);
+    }
+  }
 
   @override
   void dispose() {
@@ -60,13 +103,32 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     });
   }
 
-  void _reset() {
-    setState(() {
-      lastPeriodDate = null;
-      cycleLength = null;
-      result = '';
-      _cycleLengthController.clear();
-    });
+  Future<void> _saveToHistory() async {
+    if (lastPeriodDate != null && cycleLength != null && result.isNotEmpty) {
+      final historyItem = HistoryItem(
+        lastPeriodDate: lastPeriodDate!,
+        cycleLength: cycleLength!,
+        result: result,
+        savedAt: DateTime.now(),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      final historyJson = prefs.getStringList('history') ?? [];
+      historyJson.add(jsonEncode(historyItem.toJson()));
+      await prefs.setStringList('history', historyJson);
+
+      setState(() {
+        _showSavedMessage = true;
+      });
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            _showSavedMessage = false;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -74,19 +136,22 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () {
             // Handle back button press
           },
         ),
-        title: const Text(
+        title: Text(
           'Period Tracker',
-          style: TextStyle(fontSize: 20, color: Colors.black),
+          style: TextStyle(
+            fontSize: 20,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0, // No shadow
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -111,7 +176,11 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                   lastDate: DateTime.now(),
                 );
                 if (picked != null) {
-                  setState(() => lastPeriodDate = picked);
+                  setState(() {
+                    lastPeriodDate = picked;
+                    result = ''; // Clear results when date changes
+                  });
+                  await _saveData();
                 }
               },
               child: Container(
@@ -129,7 +198,9 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                           ? 'Last period date'
                           : "${lastPeriodDate!.day.toString().padLeft(2, '0')} ${utils.DateUtils.monthName(lastPeriodDate!.month)} ${lastPeriodDate!.year}",
                       style: TextStyle(
-                        color: lastPeriodDate == null ? const Color(0xFF8B5F6C) : Colors.black,
+                        color: lastPeriodDate == null 
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
                       ),
                     ),
@@ -138,47 +209,69 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
               ),
             ),
             if (lastPeriodDate == null)
-              const Padding(
-                padding: EdgeInsets.only(top: 4, left: 4),
-                child: Text('Please select a date',
-                    style: TextStyle(color: Colors.red, fontSize: 13)),
+              Padding(
+                padding: const EdgeInsets.only(top: 4, left: 4),
+                child: Text(
+                  'Please select a date',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 13
+                  ),
+                ),
               ),
             const SizedBox(height: 16),
             TextField(
               controller: _cycleLengthController,
               keyboardType: TextInputType.number,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Average cycle length (days)',
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 errorText: (cycleLength == null || cycleLength! < 20 || cycleLength! > 40)
                     ? 'Enter 20-40'
                     : null,
+                errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
               ),
-              onChanged: (val) {
+              onChanged: (val) async {
                 final n = int.tryParse(val);
                 setState(() {
                   cycleLength = n;
+                  result = ''; // Clear results when cycle length changes
                 });
+                await _saveData();
               },
             ),
             const SizedBox(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end, // Align buttons to the right
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: 120, // Adjust width as needed
+                  width: 120,
                   child: ElevatedButton(
                     onPressed: _calculate,
-                    child: const Text('Submit'),
-                  ),
-                ),
-                const SizedBox(width: 12), // Space between buttons
-                SizedBox(
-                  width: 100, // Adjust width as needed
-                  child: ElevatedButton(
-                    onPressed: _reset,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[300], // Subtle grey background
-                      foregroundColor: Colors.black87, // Dark text
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.0),
                       ),
@@ -188,30 +281,60 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: const Text('Reset'),
+                    child: const Text('Submit'),
                   ),
                 ),
               ],
             ),
             if (result.isNotEmpty) ...[
               const SizedBox(height: 32),
-              const Text(
-                'Predictions',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              GestureDetector(
+                onDoubleTap: _saveToHistory,
+                child: Stack(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Predictions',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        if (_showSavedMessage)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Saved to history!',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
               ResultCard(resultData: result),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 'Calendar',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
@@ -225,33 +348,54 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Ensures all items are visible
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        items: <BottomNavigationBarItem>[
+        unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        currentIndex: 0, // Home tab
+        items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
+            icon: Icon(Icons.history),
+            label: 'History',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Add',
+            icon: Icon(Icons.edit_note),
+            label: 'Log',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
         onTap: (index) {
-          // Handle navigation
+          if (index != 0) { // If not home
+            if (index == 1) { // History
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HistoryPage(),
+                ),
+              );
+            } else if (index == 2) { // Log
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LogPage(),
+                ),
+              );
+            } else if (index == 3) { // Settings
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsPage(),
+                ),
+              );
+            }
+          }
         },
       ),
     );

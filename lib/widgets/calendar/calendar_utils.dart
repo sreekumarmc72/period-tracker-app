@@ -53,20 +53,31 @@ class CalendarUtils {
     return dates;
   }
 
-  static Widget buildLegendBox(Color color, String label) {
+  static Widget buildLegendBox(Color color, String label, BuildContext context) {
+    if (label == 'Ovulation Day') {
+      color = Colors.blue;
+    } else if (label == 'Safe Dates') {
+      color = Colors.green;
+    } else if (label == 'Unsafe Dates') {
+      color = Colors.red;
+    }
+    
     return Row(
       children: [
         Container(
           width: 18,
           height: 18,
           decoration: BoxDecoration(
-            color: color,
+            color: color.withOpacity(0.3),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.black26),
+            border: Border.all(color: color),
           ),
         ),
         const SizedBox(width: 4),
-        Text(label),
+        Text(
+          label,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
       ],
     );
   }
