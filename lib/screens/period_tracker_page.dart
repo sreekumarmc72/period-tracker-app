@@ -142,7 +142,7 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
           },
         ),
         title: Text(
-          'Period Tracker',
+          'FemFlow',
           style: TextStyle(
             fontSize: 20,
             color: Theme.of(context).colorScheme.onSurface,

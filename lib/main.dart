@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Period Tracker',
           theme: themeProvider.theme,
+          debugShowCheckedModeBanner: false,
           home: const PeriodTrackerPage(),
         );
       },
